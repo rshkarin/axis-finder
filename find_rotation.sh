@@ -9,5 +9,5 @@ for AXIS in {950..1050..5}; do \
             --projections ${current_dir}/proj360/ --angle 0.00314159265 \
             --axis ${AXIS} --method fbp \
             --output ${current_dir}/slices_axis/slice-${AXIS}-%05i.tif \
-            --y 1100 --height 1 --number 2000 \
-; done
+            --y 1100 --height 1 --number 2000; \
+done
