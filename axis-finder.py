@@ -57,7 +57,7 @@ def run_tofu(sample_paths, proj_folder='proj360', num_axes=40):
             '--number {projNum}'
 
             app = cmd_template.format(**args_fmt)
-            process = subprocess.Popen(app, shell=True)
+            process = subprocess.Popen(app, shell=True, cwd=path)
             streamdata = process.communicate()[0]
             rc = process.returncode
 
