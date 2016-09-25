@@ -63,9 +63,9 @@ def run_tofu(sample_paths, proj_folder='proj360', num_axes=40):
 
             print '{0} [Axis: {1}]'.format(sample_name, rot_axis)
 
-def start_reconstruction(search_dir, sample_names):
+def start_reconstruction(search_dir, sample_names, num_axes):
     sample_paths = get_sample_paths(search_dir, sample_names)
-    run_tofu(sample_paths)
+    run_tofu(sample_paths, num_axes=num_axes)
 
 #http://stackoverflow.com/questions/2859674/converting-python-list-of-strings-to-their-type
 def _tryeval(val):
@@ -94,9 +94,16 @@ def main():
                         help="List of sample names to process", \
                         type=_list_type, \
                         required=True)
+    parser.add_argument("-a", "--num_axes", \
+                        help="The number of axes to calculate", \
+                        type=int, \
+                        default=40)
+
     args = parser.parse_args()
 
-    start_reconstruction(args.search_dir, args.sample_names)
+    start_reconstruction(args.search_dir, \
+                         args.sample_names, \
+                         args.num_axes)
 
 if __name__ == "__main__":
     sys.exit(main())
