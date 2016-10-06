@@ -174,19 +174,19 @@ def main():
                         help="The number of slices per device", \
                         type=int, \
                         default=10)
-    parser.add_argument("-g", "--lamino-angle", \
+    parser.add_argument("--lamino-angle", \
                         help="The laminography angle", \
                         type=float, \
                         default=59.653557)
-    parser.add_argument("-a", "--overall-angle", \
+    parser.add_argument("--overall-angle", \
                         help=" The total angle over which projections were taken in degrees", \
                         type=int, \
                         default=-360)
-    parser.add_argument("-a", "--roll-angle", \
+    parser.add_argument("--roll-angle", \
                         help="The phi-misalignment angle", \
                         type=float, \
                         default=0.617746)
-    parser.add_argument("-p", "--z-parameter", \
+    parser.add_argument("--z-parameter", \
                         help="Z-axis parameter", \
                         type=str, \
                         default='z')
