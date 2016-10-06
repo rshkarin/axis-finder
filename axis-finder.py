@@ -129,18 +129,18 @@ def start_reconstruction(search_dir, \
                                     sample_names)
 
     print sample_paths
-    # run_tofu(sample_paths, \
-    #          num_axes=num_axes, \
-    #          tomo=tomo, \
-    #          slices_per_device=slices_per_device, \
-    #          overall_angle=overall_angle, \
-    #          roll_angle=roll_angle, \
-    #          lamino_angle=lamino_angle, \
-    #          z_param=z_param, \
-    #          param_region=param_region, \
-    #          y_pos=y_pos, \
-    #          reco_height=reco_height, \
-    #          lamino_axes=lamino_axes)
+    run_tofu(sample_paths, \
+             num_axes=num_axes, \
+             tomo=tomo, \
+             slices_per_device=slices_per_device, \
+             overall_angle=overall_angle, \
+             roll_angle=roll_angle, \
+             lamino_angle=lamino_angle, \
+             z_param=z_param, \
+             param_region=param_region, \
+             y_pos=y_pos, \
+             reco_height=reco_height, \
+             lamino_axes=lamino_axes)
 
 #http://stackoverflow.com/questions/2859674/converting-python-list-of-strings-to-their-type
 def _tryeval(val):
