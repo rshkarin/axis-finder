@@ -30,8 +30,9 @@ def run_tofu(sample_paths, \
              z_param=None, \
              param_region=None, \
              y_pos=None, \
-             reco_height=1):
-    for path in sample_paths:
+             reco_height=1, \
+             lamino_axes=None):
+    for i, path in enumerate(sample_paths):
         sample_name = os.path.basename(os.path.split(path)[0])
         proj_path = os.path.join(path, proj_folder)
         projs = [f for f in os.listdir(proj_path) \
@@ -41,6 +42,9 @@ def run_tofu(sample_paths, \
         height, width = data.shape
         hc,wc = int(height/2), int(width/2)
 
+        if lamino_axes is not None:
+            wc = lamino_axes[i][0]
+
         rot_axes = range(wc-num_axes, wc+num_axes+1)
 
         if y_pos is None:
@@ -49,13 +53,13 @@ def run_tofu(sample_paths, \
         num_proj = len(projs) - 1
         args_fmt = {'projFolder': proj_folder, \
                     'angleRad': 2 * np.pi / float(num_proj), \
-                    'projNum': num_proj, \
-                    'yPos': y_pos}
+                    'projNum': num_proj}
 
         cmd_template = None
 
         if tomo:
             args_fmt['recoHeight'] = reco_height
+            args_fmt['yPos'] = y_pos
 
             cmd_template = 'tofu tomo ' \
             '--fix-nan-and-inf ' \
@@ -77,6 +81,7 @@ def run_tofu(sample_paths, \
             args_fmt['laminoAngle'] = lamino_angle
             args_fmt['zParam'] = z_param
             args_fmt['paramRegion'] = param_region
+            args_fmt['yPos'] = lamino_axes[i][1]
 
             cmd_template = 'tofu lamino ' \
             '--fix-nan-and-inf ' \
@@ -117,7 +122,8 @@ def start_reconstruction(search_dir, \
                          z_param=None, \
                          param_region=None, \
                          y_pos=None, \
-                         reco_height=1):
+                         reco_height=1, \
+                         lamino_axes=None):
 
     sample_paths = get_sample_paths(search_dir, \
                                     sample_names)
@@ -133,7 +139,8 @@ def start_reconstruction(search_dir, \
     #          z_param=z_param, \
     #          param_region=param_region, \
     #          y_pos=y_pos, \
-    #          reco_height=reco_height)
+    #          reco_height=reco_height, \
+    #          lamino_axes=lamino_axes)
 
 #http://stackoverflow.com/questions/2859674/converting-python-list-of-strings-to-their-type
 def _tryeval(val):
@@ -178,6 +185,10 @@ def main():
                         help="The laminography angle", \
                         type=float, \
                         default=59.653557)
+    parser.add_argument("--lamino-axes", \
+                        help="The laminography axes (x,y)", \
+                        type=_tryeval, \
+                        default=None)
     parser.add_argument("--overall-angle", \
                         help=" The total angle over which projections were taken in degrees", \
                         type=int, \
@@ -216,7 +227,8 @@ def main():
                          z_param=args.z_parameter, \
                          param_region=args.region, \
                          y_pos=args.y, \
-                         reco_height=args.height)
+                         reco_height=args.height, \
+                         lamino_axes=args.lamino_axes)
 
 if __name__ == "__main__":
     sys.exit(main())
