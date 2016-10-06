@@ -15,11 +15,22 @@ def get_sample_paths(search_dir, sample_names, tomo_folder='tomo'):
         for sample_name in sample_names:
             if tomo_folder in os.path.basename(root) and \
                sample_name in root:
-                out.append(root)
+               out.append(root)
 
     return out
 
-def run_tofu(sample_paths, proj_folder='proj360', num_axes=40):
+def run_tofu(sample_paths, \
+             proj_folder='proj360', \
+             num_axes=40, \
+             tomo=True, \
+             slices_per_device=None, \
+             overall_angle=None, \
+             roll_angle=None, \
+             lamino_angle=None, \
+             z_param=None, \
+             param_region=None, \
+             y_pos=None, \
+             reco_height=1):
     for path in sample_paths:
         sample_name = os.path.basename(os.path.split(path)[0])
         proj_path = os.path.join(path, proj_folder)
@@ -31,19 +42,23 @@ def run_tofu(sample_paths, proj_folder='proj360', num_axes=40):
         hc,wc = int(height/2), int(width/2)
 
         rot_axes = range(wc-num_axes, wc+num_axes+1)
-        y_pos = hc
-        reco_height = 1
+
+        if y_pos is None:
+            y_pos = hc
+
         num_proj = len(projs) - 1
         args_fmt = {'projFolder': proj_folder, \
                     'angleRad': 2 * np.pi / float(num_proj), \
-                    'yPos': y_pos, \
-                    'recoHeight': reco_height, \
-                    'projNum': num_proj}
+                    'projNum': num_proj, \
+                    'yPos': y_pos}
 
-        for rot_axis in rot_axes:
-            args_fmt['axisPos'] = rot_axis
+        cmd_template = None
+
+        if tomo:
+            args_fmt['recoHeight'] = reco_height
 
             cmd_template = 'tofu tomo ' \
+            '--fix-nan-and-inf ' \
             '--absorptivity ' \
             '--darks dark/ ' \
             '--flats flat/ ' \
@@ -55,6 +70,34 @@ def run_tofu(sample_paths, proj_folder='proj360', num_axes=40):
             '--y {yPos} ' \
             '--height {recoHeight} ' \
             '--number {projNum}'
+        else:
+            args_fmt['slicesPerDevice'] = slices_per_device
+            args_fmt['overallAngle'] = overall_angle
+            args_fmt['rollAngle'] = roll_angle
+            args_fmt['laminoAngle'] = lamino_angle
+            args_fmt['zParam'] = z_param
+            args_fmt['paramRegion'] = param_region
+
+            cmd_template = 'tofu lamino ' \
+            '--fix-nan-and-inf ' \
+            '--absorptivity ' \
+            '--darks dark/ ' \
+            '--flats flat/ ' \
+            '--projections {projFolder}/ ' \
+            '--angle {angleRad} ' \
+            '--axis {axisPos},{yPos} ' \
+            '--lamino-angle {laminoAngle} ' \
+            '--roll-angle {rollAngle} ' \
+            '--overall-angle {overallAngle} ' \
+            '--slices-per-device {slicesPerDevice} ' \
+            '--output slices_axis/slice-{axisPos} ' \
+            '--z-parameter {zParam} ' \
+            '--region="{paramRegion}" ' \
+            '--number {projNum} ' \
+            '--verbose'
+
+        for rot_axis in rot_axes:
+            args_fmt['axisPos'] = rot_axis
 
             app = cmd_template.format(**args_fmt)
             process = subprocess.Popen(app, shell=True, cwd=path)
@@ -63,9 +106,34 @@ def run_tofu(sample_paths, proj_folder='proj360', num_axes=40):
 
             print '{0} [Axis: {1}]'.format(sample_name, rot_axis)
 
-def start_reconstruction(search_dir, sample_names, num_axes):
-    sample_paths = get_sample_paths(search_dir, sample_names)
-    run_tofu(sample_paths, num_axes=num_axes)
+def start_reconstruction(search_dir, \
+                         sample_names, \
+                         num_axes, \
+                         tomo=True, \
+                         slices_per_device=None, \
+                         overall_angle=None, \
+                         roll_angle=None, \
+                         lamino_angle=None, \
+                         z_param=None, \
+                         param_region=None, \
+                         y_pos=None, \
+                         reco_height=1):
+
+    sample_paths = get_sample_paths(search_dir, \
+                                    sample_names)
+
+    print sample_paths
+    # run_tofu(sample_paths, \
+    #          num_axes=num_axes, \
+    #          tomo=tomo, \
+    #          slices_per_device=slices_per_device, \
+    #          overall_angle=overall_angle, \
+    #          roll_angle=roll_angle, \
+    #          lamino_angle=lamino_angle, \
+    #          z_param=z_param, \
+    #          param_region=param_region, \
+    #          y_pos=y_pos, \
+    #          reco_height=reco_height)
 
 #http://stackoverflow.com/questions/2859674/converting-python-list-of-strings-to-their-type
 def _tryeval(val):
@@ -94,16 +162,61 @@ def main():
                         help="List of sample names to process", \
                         type=_list_type, \
                         required=True)
+    parser.add_argument("-l", "--lamino", \
+                        help="The imaging setup is laminography", \
+                        dest='tomo', \
+                        action='store_false')
     parser.add_argument("-a", "--num_axes", \
                         help="The number of axes to calculate", \
                         type=int, \
                         default=40)
+    parser.add_argument("-s", "--slices-per-device", \
+                        help="The number of slices per device", \
+                        type=int, \
+                        default=10)
+    parser.add_argument("-g", "--lamino-angle", \
+                        help="The laminography angle", \
+                        type=float, \
+                        default=59.653557)
+    parser.add_argument("-a", "--overall-angle", \
+                        help=" The total angle over which projections were taken in degrees", \
+                        type=int, \
+                        default=-360)
+    parser.add_argument("-a", "--roll-angle", \
+                        help="The phi-misalignment angle", \
+                        type=float, \
+                        default=0.617746)
+    parser.add_argument("-p", "--z-parameter", \
+                        help="Z-axis parameter", \
+                        type=str, \
+                        default='z')
+    parser.add_argument("-r", "--region", \
+                        help="Z-axis parameter region as from,to,step", \
+                        type=str, \
+                        default='0,-1,1')
+    parser.add_argument("-y", "--y", \
+                        help="The y-position in reconstructed volume", \
+                        type=int, \
+                        default=None)
+    parser.add_argument("-h", "--height", \
+                        help="The height of reconstructed volume", \
+                        type=int, \
+                        default=None)
 
     args = parser.parse_args()
 
     start_reconstruction(args.search_dir, \
                          args.sample_names, \
-                         args.num_axes)
+                         args.num_axes, \
+                         tomo=args.tomo, \
+                         slices_per_device=args.slices_per_device, \
+                         overall_angle=args.overall_angle, \
+                         roll_angle=args.roll_angle, \
+                         lamino_angle=args.lamino_angle, \
+                         z_param=args.z_parameter, \
+                         param_region=args.region, \
+                         y_pos=args.y, \
+                         reco_height=args.height)
 
 if __name__ == "__main__":
     sys.exit(main())
