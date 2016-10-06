@@ -201,15 +201,15 @@ def main():
                         help="Z-axis parameter", \
                         type=str, \
                         default='z')
-    parser.add_argument("-r", "--region", \
+    parser.add_argument("--region", \
                         help="Z-axis parameter region as from,to,step", \
                         type=str, \
-                        default='0,-1,1')
-    parser.add_argument("-y", "--y", \
+                        default='0,1,1')
+    parser.add_argument("--y", \
                         help="The y-position in reconstructed volume", \
                         type=int, \
                         default=None)
-    parser.add_argument("-h", "--height", \
+    parser.add_argument("--height", \
                         help="The height of reconstructed volume", \
                         type=int, \
                         default=None)
