@@ -120,19 +120,19 @@ def run_tofu(sample_entries, \
             else:
                 raise ValueError('The axis has incorrect value.')
 
-        print rot_axes
-        args_fmt['axisPos'] = wc
-        print cmd_template.format(**args_fmt)
+        # print rot_axes
+        # args_fmt['axisPos'] = wc
+        # print cmd_template.format(**args_fmt)
 
-        # for rot_axis in rot_axes:
-        #     args_fmt['axisPos'] = rot_axis
-        #
-        #     app = cmd_template.format(**args_fmt)
-        #     process = subprocess.Popen(app, shell=True, cwd=path)
-        #     streamdata = process.communicate()[0]
-        #     rc = process.returncode
-        #
-        #     print '{0} [Axis: {1}]'.format(sample_name, rot_axis)
+        for rot_axis in rot_axes:
+            args_fmt['axisPos'] = rot_axis
+
+            app = cmd_template.format(**args_fmt)
+            process = subprocess.Popen(app, shell=True, cwd=path)
+            streamdata = process.communicate()[0]
+            rc = process.returncode
+
+            print '{0} [Axis: {1}]'.format(sample_name, rot_axis)
 
 def start_reconstruction(search_dir, \
                          sample_confs, \
