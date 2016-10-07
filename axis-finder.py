@@ -12,8 +12,9 @@ def get_sample_entries(search_dir, sample_confs, tomo_folder='tomo'):
     out = []
 
     for root, dirs, files in os.walk(search_dir):
+        comps = root.split(os.sep)
         for sample_name, axis in sample_confs.iteritems():
-            if tomo_folder in os.path.basename(root) and sample_name in root:
+            if tomo_folder in os.path.basename(root) and sample_name in comps:
                out.append({'name': sample_name, 'path': root, 'axis': axis})
 
     return out
