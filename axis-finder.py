@@ -8,18 +8,17 @@ import subprocess
 import numpy as np
 from skimage import io
 
-def get_sample_paths(search_dir, sample_names, tomo_folder='tomo'):
+def get_sample_entries(search_dir, sample_confs, tomo_folder='tomo'):
     out = []
 
     for root, dirs, files in os.walk(search_dir):
-        for sample_name in sample_names:
-            if tomo_folder in os.path.basename(root) and \
-               sample_name in root:
-               out.append(root)
+        for sample_name, axis in sample_confs.iteritems():
+            if tomo_folder in os.path.basename(root) and sample_name in root:
+               out.append({'name': sample_name, 'path': root, 'axis': axis})
 
     return out
 
-def run_tofu(sample_paths, \
+def run_tofu(sample_entries, \
              proj_folder='proj360', \
              num_axes=40, \
              tomo=True, \
@@ -30,10 +29,11 @@ def run_tofu(sample_paths, \
              z_param=None, \
              param_region=None, \
              y_pos=None, \
-             reco_height=1, \
-             lamino_axes=None):
-    for i, path in enumerate(sample_paths):
-        sample_name = os.path.basename(os.path.split(path)[0])
+             reco_height=1):
+    for i, sample_entry in enumerate(sample_entries):
+        path = sample_entry['path']
+        sample_name = sample_entry['name']
+
         proj_path = os.path.join(path, proj_folder)
         projs = [f for f in os.listdir(proj_path) \
                  if os.path.isfile(os.path.join(proj_path, f))]
@@ -42,8 +42,19 @@ def run_tofu(sample_paths, \
         height, width = data.shape
         hc,wc = int(height/2), int(width/2)
 
-        if lamino_axes is not None:
-            wc = lamino_axes[i][0]
+        axis_is_container, axis_is_number = \
+                isinstance(sample_entry['axis'], tuple) or \
+                isinstance(sample_entry['axis'], list), \
+                isinstance(sample_entry['axis'], int) or \
+                isinstance(sample_entry['axis'], float)
+
+
+        if axis_is_container:
+            wc = sample_entry['axis'][0]
+        elif axis_is_number:
+            wc = sample_entry['axis']
+        else:
+            raise ValueError('The axis has incorrect type.')
 
         rot_axes = range(wc-num_axes, wc+num_axes+1)
 
@@ -81,7 +92,9 @@ def run_tofu(sample_paths, \
             args_fmt['laminoAngle'] = lamino_angle
             args_fmt['zParam'] = z_param
             args_fmt['paramRegion'] = param_region
-            args_fmt['yPos'] = lamino_axes[i][1]
+
+            if axis_is_container:
+                args_fmt['yPos'] = sample_entry['axis'][1]
 
             cmd_template = 'tofu lamino ' \
             '--fix-nan-and-inf ' \
@@ -90,7 +103,6 @@ def run_tofu(sample_paths, \
             '--flats flat/ ' \
             '--projections {projFolder}/ ' \
             '--angle {angleRad} ' \
-            '--axis {axisPos},{yPos} ' \
             '--lamino-angle {laminoAngle} ' \
             '--roll-angle {rollAngle} ' \
             '--overall-angle {overallAngle} ' \
@@ -99,20 +111,31 @@ def run_tofu(sample_paths, \
             '--z-parameter {zParam} ' \
             '--region="{paramRegion}" ' \
             '--number {projNum} ' \
-            '--verbose'
+            '--verbose '
 
-        for rot_axis in rot_axes:
-            args_fmt['axisPos'] = rot_axis
+            if axis_is_container:
+                cmd_template += '--axis {axisPos},{yPos}'
+            elif axis_is_number:
+                cmd_template += '--axis {axisPos}'
+            else:
+                raise ValueError('The axis has incorrect value.')
 
-            app = cmd_template.format(**args_fmt)
-            process = subprocess.Popen(app, shell=True, cwd=path)
-            streamdata = process.communicate()[0]
-            rc = process.returncode
+        print rot_axes
+        args_fmt['axisPos'] = wc
+        print cmd_template.format(**args_fmt)
 
-            print '{0} [Axis: {1}]'.format(sample_name, rot_axis)
+        # for rot_axis in rot_axes:
+        #     args_fmt['axisPos'] = rot_axis
+        #
+        #     app = cmd_template.format(**args_fmt)
+        #     process = subprocess.Popen(app, shell=True, cwd=path)
+        #     streamdata = process.communicate()[0]
+        #     rc = process.returncode
+        #
+        #     print '{0} [Axis: {1}]'.format(sample_name, rot_axis)
 
 def start_reconstruction(search_dir, \
-                         sample_names, \
+                         sample_confs, \
                          num_axes, \
                          tomo=True, \
                          slices_per_device=None, \
@@ -122,27 +145,21 @@ def start_reconstruction(search_dir, \
                          z_param=None, \
                          param_region=None, \
                          y_pos=None, \
-                         reco_height=1, \
-                         lamino_axes=None):
+                         reco_height=1):
 
-    sample_paths = get_sample_paths(search_dir, \
-                                    sample_names)
+    sample_entries = get_sample_entries(search_dir, sample_confs)
 
-    for p in sample_paths:
-        print p
-        
-    # run_tofu(sample_paths, \
-    #          num_axes=num_axes, \
-    #          tomo=tomo, \
-    #          slices_per_device=slices_per_device, \
-    #          overall_angle=overall_angle, \
-    #          roll_angle=roll_angle, \
-    #          lamino_angle=lamino_angle, \
-    #          z_param=z_param, \
-    #          param_region=param_region, \
-    #          y_pos=y_pos, \
-    #          reco_height=reco_height, \
-    #          lamino_axes=lamino_axes)
+    run_tofu(sample_entries, \
+             num_axes=num_axes, \
+             tomo=tomo, \
+             slices_per_device=slices_per_device, \
+             overall_angle=overall_angle, \
+             roll_angle=roll_angle, \
+             lamino_angle=lamino_angle, \
+             z_param=z_param, \
+             param_region=param_region, \
+             y_pos=y_pos, \
+             reco_height=reco_height)
 
 #http://stackoverflow.com/questions/2859674/converting-python-list-of-strings-to-their-type
 def _tryeval(val):
@@ -163,23 +180,23 @@ def _list_type(string):
 def main():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-i", "--search_dir", \
+    parser.add_argument("--search_dir", \
                         help="Path to the folder containing the splitted data of samples", \
                         type=str, \
                         required=True)
-    parser.add_argument("-n", "--sample_names", \
-                        help="List of sample names to process", \
-                        type=_list_type, \
+    parser.add_argument("--sample-configs", \
+                        help="List of sample entries as dictionaries {name: axis_x,axis_y} or {name: axis_x} to process", \
+                        type=_tryeval, \
                         required=True)
-    parser.add_argument("-l", "--lamino", \
+    parser.add_argument("--lamino", \
                         help="The imaging setup is laminography", \
                         dest='tomo', \
                         action='store_false')
-    parser.add_argument("-a", "--num_axes", \
+    parser.add_argument("--num_axes", \
                         help="The number of axes to calculate", \
                         type=int, \
                         default=40)
-    parser.add_argument("-s", "--slices-per-device", \
+    parser.add_argument("--slices-per-device", \
                         help="The number of slices per device", \
                         type=int, \
                         default=10)
@@ -187,10 +204,6 @@ def main():
                         help="The laminography angle", \
                         type=float, \
                         default=59.653557)
-    parser.add_argument("--lamino-axes", \
-                        help="The laminography axes (x,y)", \
-                        type=_tryeval, \
-                        default=None)
     parser.add_argument("--overall-angle", \
                         help=" The total angle over which projections were taken in degrees", \
                         type=int, \
@@ -219,7 +232,7 @@ def main():
     args = parser.parse_args()
 
     start_reconstruction(args.search_dir, \
-                         args.sample_names, \
+                         args.sample_configs, \
                          args.num_axes, \
                          tomo=args.tomo, \
                          slices_per_device=args.slices_per_device, \
@@ -229,8 +242,7 @@ def main():
                          z_param=args.z_parameter, \
                          param_region=args.region, \
                          y_pos=args.y, \
-                         reco_height=args.height, \
-                         lamino_axes=args.lamino_axes)
+                         reco_height=args.height)
 
 if __name__ == "__main__":
     sys.exit(main())
