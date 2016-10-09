@@ -56,7 +56,6 @@ def run_tofu(sample_entries, \
                 isinstance(sample_entry['axis'], int) or \
                 isinstance(sample_entry['axis'], float)
 
-
         if axis_is_container:
             wc = sample_entry['axis'][0]
         elif axis_is_number:
@@ -104,6 +103,8 @@ def run_tofu(sample_entries, \
 
             if axis_is_container:
                 args_fmt['yPos'] = sample_entry['axis'][1]
+            else:
+                args_fmt['yPos'] = hc
 
             cmd_template = 'tofu lamino ' \
             '--fix-nan-and-inf ' \
@@ -122,9 +123,9 @@ def run_tofu(sample_entries, \
             '--verbose'
 
             if axis_is_container:
-                cmd_template += ' --axis {axisPos},{yPos}'
+                cmd_template += ' --axis "{axisPos},{yPos}"'
             elif axis_is_number:
-                cmd_template += ' --axis {axisPos}'
+                cmd_template += ' --axis "{axisPos},{yPos}"'
             else:
                 raise ValueError('The axis has incorrect value.')
 
