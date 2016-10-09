@@ -31,6 +31,13 @@ def run_tofu(sample_entries, \
              param_region=None, \
              y_pos=None, \
              reco_height=1):
+
+    def run_process(cmd_template, args, working_path):
+        app = cmd_template.format(**args)
+        #process = subprocess.Popen(app, shell=True, cwd=working_path)
+        #streamdata = process.communicate()[0]
+        print app
+
     for i, sample_entry in enumerate(sample_entries):
         path = sample_entry['path']
         sample_name = sample_entry['name']
@@ -57,7 +64,9 @@ def run_tofu(sample_entries, \
         else:
             raise ValueError('The axis has incorrect type.')
 
-        rot_axes = range(wc-num_axes, wc+num_axes+1)
+        rot_axes = None
+        if num_axes:
+            rot_axes = range(wc-num_axes, wc+num_axes+1)
 
         if y_pos is None:
             y_pos = hc
@@ -82,7 +91,6 @@ def run_tofu(sample_entries, \
             '--angle {angleRad} ' \
             '--axis {axisPos} ' \
             '--method fbp ' \
-            '--output slices_axis/slice-{axisPos}-%05i.tif ' \
             '--y {yPos} ' \
             '--height {recoHeight} ' \
             '--number {projNum}'
@@ -108,32 +116,37 @@ def run_tofu(sample_entries, \
             '--roll-angle {rollAngle} ' \
             '--overall-angle {overallAngle} ' \
             '--slices-per-device {slicesPerDevice} ' \
-            '--output slices_axis/slice-{axisPos} ' \
             '--z-parameter {zParam} ' \
             '--region="{paramRegion}" ' \
             '--number {projNum} ' \
-            '--verbose '
+            '--verbose'
 
             if axis_is_container:
-                cmd_template += '--axis {axisPos},{yPos}'
+                cmd_template += ' --axis {axisPos},{yPos}'
             elif axis_is_number:
-                cmd_template += '--axis {axisPos}'
+                cmd_template += ' --axis {axisPos}'
             else:
                 raise ValueError('The axis has incorrect value.')
 
-        # print rot_axes
-        # args_fmt['axisPos'] = wc
-        # print cmd_template.format(**args_fmt)
+        if num_axes:
+            cmd_template += ' --output slices_axis/slice-{axisPos}-%05i.tif' \
+                                if tomo else \
+                                    ' --output slices_axis/slice-{axisPos}'
+        else:
+            cmd_template += ' --output slices/slice-%05i.tif' \
+                                if tomo else \
+                                    ' --output slices/slice'
 
-        for rot_axis in rot_axes:
-            args_fmt['axisPos'] = rot_axis
+        if rot_axes is not None:
+            for rot_axis in rot_axes:
+                args_fmt['axisPos'] = rot_axis
 
-            app = cmd_template.format(**args_fmt)
-            process = subprocess.Popen(app, shell=True, cwd=path)
-            streamdata = process.communicate()[0]
-            rc = process.returncode
+                run_process(cmd_template, args_fmt, path)
 
-            print '{0} [Axis: {1}]'.format(sample_name, rot_axis)
+                print '{0} [Axis: {1}]'.format(sample_name, rot_axis)
+        else:
+            args_fmt['axisPos'] = wc
+            run_process(cmd_template, args_fmt, path)
 
 def start_reconstruction(search_dir, \
                          sample_confs, \
