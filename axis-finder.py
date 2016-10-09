@@ -34,9 +34,9 @@ def run_tofu(sample_entries, \
 
     def run_process(cmd_template, args, working_path):
         app = cmd_template.format(**args)
-        #process = subprocess.Popen(app, shell=True, cwd=working_path)
-        #streamdata = process.communicate()[0]
-        print app
+        process = subprocess.Popen(app, shell=True, cwd=working_path)
+        streamdata = process.communicate()[0]
+        #print app
 
     for i, sample_entry in enumerate(sample_entries):
         path = sample_entry['path']
