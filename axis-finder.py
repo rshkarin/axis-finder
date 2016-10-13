@@ -168,11 +168,13 @@ def start_reconstruction(search_dir, \
                          reco_height=1, \
                          output_folder='slices', \
                          output_axis_folder='slices_axis', \
-                         correction=True):
+                         correction=True, \
+                         proj_folder='proj360'):
 
     sample_entries = get_sample_entries(search_dir, sample_confs)
 
     run_tofu(sample_entries, \
+             proj_folder=proj_folder, \
              num_axes=num_axes, \
              tomo=tomo, \
              slices_per_device=slices_per_device, \
@@ -266,6 +268,10 @@ def main():
                         help="The name of the output folder of slices of found rotation axes", \
                         type=str, \
                         default='slices_axis')
+    parser.add_argument("--proj-folder", \
+                        help="The name of folder containing projections", \
+                        type=str, \
+                        default='proj360')
 
     args = parser.parse_args()
 
@@ -283,7 +289,8 @@ def main():
                          reco_height=args.height, \
                          output_folder=args.output_folder, \
                          output_axis_folder=args.output_axis_folder, \
-                         correction=args.correction)
+                         correction=args.correction, \
+                         proj_folder=args.proj_folder)
 
 if __name__ == "__main__":
     sys.exit(main())
