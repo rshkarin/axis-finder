@@ -32,7 +32,8 @@ def run_tofu(sample_entries, \
              y_pos=None, \
              reco_height=1, \
              output_folder='slices', \
-             output_axis_folder='slices_axis'):
+             output_axis_folder='slices_axis', \
+             correction=True):
 
     def run_process(cmd_template, args, working_path):
         app = cmd_template.format(**args)
@@ -86,16 +87,14 @@ def run_tofu(sample_entries, \
 
             cmd_template = 'tofu tomo ' \
             '--fix-nan-and-inf ' \
-            '--absorptivity ' \
-            '--darks dark/ ' \
-            '--flats flat/ ' \
             '--projections {projFolder}/ ' \
             '--angle {angleRad} ' \
             '--axis {axisPos} ' \
             '--method fbp ' \
             '--y {yPos} ' \
             '--height {recoHeight} ' \
-            '--number {projNum}'
+            '--number {projNum} ' \
+            '--verbose'
         else:
             args_fmt['slicesPerDevice'] = slices_per_device
             args_fmt['overallAngle'] = overall_angle
@@ -111,9 +110,6 @@ def run_tofu(sample_entries, \
 
             cmd_template = 'tofu lamino ' \
             '--fix-nan-and-inf ' \
-            '--absorptivity ' \
-            '--darks dark/ ' \
-            '--flats flat/ ' \
             '--projections {projFolder}/ ' \
             '--angle {angleRad} ' \
             '--lamino-angle {laminoAngle} ' \
@@ -131,6 +127,9 @@ def run_tofu(sample_entries, \
                 cmd_template += ' --axis "{axisPos},{yPos}"'
             else:
                 raise ValueError('The axis has incorrect value.')
+
+        if correction:
+            cmd_template += ' --absorptivity --darks dark/ --flats flat/'
 
         if num_axes:
             cmd_template += ' --output {outAxisSlicesFolder}/slice-{axisPos}-%05i.tif' \
@@ -168,7 +167,8 @@ def start_reconstruction(search_dir, \
                          y_pos=None, \
                          reco_height=1, \
                          output_folder='slices', \
-                         output_axis_folder='slices_axis'):
+                         output_axis_folder='slices_axis', \
+                         correction=True):
 
     sample_entries = get_sample_entries(search_dir, sample_confs)
 
@@ -184,7 +184,8 @@ def start_reconstruction(search_dir, \
              y_pos=y_pos, \
              reco_height=reco_height, \
              output_folder=output_folder, \
-             output_axis_folder=output_axis_folder)
+             output_axis_folder=output_axis_folder, \
+             correction=correction)
 
 #http://stackoverflow.com/questions/2859674/converting-python-list-of-strings-to-their-type
 def _tryeval(val):
@@ -216,6 +217,10 @@ def main():
     parser.add_argument("--lamino", \
                         help="The imaging setup is laminography", \
                         dest='tomo', \
+                        action='store_false')
+    parser.add_argument("--no-absorptivity", \
+                        help="Disable absorptivity correction", \
+                        dest='correction', \
                         action='store_false')
     parser.add_argument("--num_axes", \
                         help="The number of axes to calculate", \
@@ -277,7 +282,8 @@ def main():
                          y_pos=args.y, \
                          reco_height=args.height, \
                          output_folder=args.output_folder, \
-                         output_axis_folder=args.output_axis_folder)
+                         output_axis_folder=args.output_axis_folder, \
+                         correction=args.correction)
 
 if __name__ == "__main__":
     sys.exit(main())
