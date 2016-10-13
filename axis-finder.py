@@ -30,10 +30,13 @@ def run_tofu(sample_entries, \
              z_param=None, \
              param_region=None, \
              y_pos=None, \
-             reco_height=1):
+             reco_height=1, \
+             output_folder='slices', \
+             output_axis_folder='slices_axis'):
 
     def run_process(cmd_template, args, working_path):
         app = cmd_template.format(**args)
+        print app
         process = subprocess.Popen(app, shell=True, cwd=working_path)
         streamdata = process.communicate()[0]
         #print app
@@ -130,13 +133,16 @@ def run_tofu(sample_entries, \
                 raise ValueError('The axis has incorrect value.')
 
         if num_axes:
-            cmd_template += ' --output slices_axis/slice-{axisPos}-%05i.tif' \
+            cmd_template += ' --output {outAxisSlicesFolder}/slice-{axisPos}-%05i.tif' \
                                 if tomo else \
-                                    ' --output slices_axis/slice-{axisPos}'
+                                    ' --output {outAxisSlicesFolder}/slice-{axisPos}'
         else:
-            cmd_template += ' --output slices/slice-%05i.tif' \
+            cmd_template += ' --output {outSlicesFolder}/slice-%05i.tif' \
                                 if tomo else \
-                                    ' --output slices/slice'
+                                    ' --output {outSlicesFolder}/slice'
+
+        args_fmt['outSlicesFolder'] = output_folder
+        args_fmt['outAxisSlicesFolder'] = output_axis_folder
 
         if rot_axes is not None:
             for rot_axis in rot_axes:
@@ -160,7 +166,9 @@ def start_reconstruction(search_dir, \
                          z_param=None, \
                          param_region=None, \
                          y_pos=None, \
-                         reco_height=1):
+                         reco_height=1, \
+                         output_folder='slices', \
+                         output_axis_folder='slices_axis'):
 
     sample_entries = get_sample_entries(search_dir, sample_confs)
 
@@ -174,7 +182,9 @@ def start_reconstruction(search_dir, \
              z_param=z_param, \
              param_region=param_region, \
              y_pos=y_pos, \
-             reco_height=reco_height)
+             reco_height=reco_height, \
+             output_folder=output_folder, \
+             output_axis_folder=output_axis_folder)
 
 #http://stackoverflow.com/questions/2859674/converting-python-list-of-strings-to-their-type
 def _tryeval(val):
@@ -243,6 +253,14 @@ def main():
                         help="The height of reconstructed volume", \
                         type=int, \
                         default=None)
+    parser.add_argument("--output-folder", \
+                        help="The name of the output folder of the reconstruction", \
+                        type=str, \
+                        default='slices')
+    parser.add_argument("--output-axis-folder", \
+                        help="The name of the output folder of slices of found rotation axes", \
+                        type=str, \
+                        default='slices_axis')
 
     args = parser.parse_args()
 
@@ -257,7 +275,9 @@ def main():
                          z_param=args.z_parameter, \
                          param_region=args.region, \
                          y_pos=args.y, \
-                         reco_height=args.height)
+                         reco_height=args.height, \
+                         output_folder=args.output_folder, \
+                         output_axis_folder=args.output_axis_folder)
 
 if __name__ == "__main__":
     sys.exit(main())
