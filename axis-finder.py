@@ -33,7 +33,8 @@ def run_tofu(sample_entries, \
              reco_height=1, \
              output_folder='slices', \
              output_axis_folder='slices_axis', \
-             correction=True):
+             correction=True, \
+             flat2_folder=False):
 
     def run_process(cmd_template, args, working_path):
         app = cmd_template.format(**args)
@@ -129,7 +130,10 @@ def run_tofu(sample_entries, \
                 raise ValueError('The axis has incorrect value.')
 
         if correction:
-            cmd_template += ' --absorptivity --darks dark/ --flats flat/'
+            if flat2_folder:
+                cmd_template += ' --absorptivity --darks dark/ --flats flat1/ --flats2 flat2/'
+            else:
+                cmd_template += ' --absorptivity --darks dark/ --flats flat/'
 
         if num_axes:
             cmd_template += ' --output {outAxisSlicesFolder}/slice-{axisPos}-%05i.tif' \
@@ -169,7 +173,8 @@ def start_reconstruction(search_dir, \
                          output_folder='slices', \
                          output_axis_folder='slices_axis', \
                          correction=True, \
-                         proj_folder='proj360'):
+                         proj_folder='proj360', \
+                         flat2_folder=False):
 
     sample_entries = get_sample_entries(search_dir, sample_confs)
 
@@ -187,7 +192,8 @@ def start_reconstruction(search_dir, \
              reco_height=reco_height, \
              output_folder=output_folder, \
              output_axis_folder=output_axis_folder, \
-             correction=correction)
+             correction=correction, \
+             flat2_folder=flat2_folder)
 
 #http://stackoverflow.com/questions/2859674/converting-python-list-of-strings-to-their-type
 def _tryeval(val):
@@ -272,6 +278,10 @@ def main():
                         help="The name of folder containing projections", \
                         type=str, \
                         default='proj360')
+    parser.add_argument("--use-flat2", \
+                        help="The name of folder containing 2nd flats", \
+                        dest='flat2_folder', \
+                        action='store_true')
 
     args = parser.parse_args()
 
@@ -290,7 +300,8 @@ def main():
                          output_folder=args.output_folder, \
                          output_axis_folder=args.output_axis_folder, \
                          correction=args.correction, \
-                         proj_folder=args.proj_folder)
+                         proj_folder=args.proj_folder, \
+                         flat2_folder=args.flat2_folder)
 
 if __name__ == "__main__":
     sys.exit(main())
