@@ -13,9 +13,9 @@ def get_sample_entries(search_dir, sample_confs, tomo_folder='tomo'):
 
     for root, dirs, files in os.walk(search_dir):
         comps = root.split(os.sep)
-        for sample_name, axis in sample_confs.iteritems():
+        for sample_name, params in sample_confs.iteritems():
             if tomo_folder in os.path.basename(root) and sample_name in comps:
-               out.append({'name': sample_name, 'path': root, 'axis': axis})
+               out.append({'name': sample_name, 'path': root, 'axis': params['axis'], 'range': params['range']})
 
     return out
 
@@ -46,6 +46,7 @@ def run_tofu(sample_entries, \
     for i, sample_entry in enumerate(sample_entries):
         path = sample_entry['path']
         sample_name = sample_entry['name']
+        reco_range = sample_entry['range']
 
         proj_path = os.path.join(path, proj_folder)
         projs = [f for f in os.listdir(proj_path) \
@@ -108,6 +109,11 @@ def run_tofu(sample_entries, \
                 args_fmt['yPos'] = sample_entry['axis'][1]
             else:
                 args_fmt['yPos'] = hc
+
+
+            if reco_range is not None:
+                reco_range = [v - hc for v in reco_range]
+                args_fmt['paramRegion'] = "{0},{1},1".format(*reco_range)
 
             cmd_template = 'tofu lamino ' \
             '--fix-nan-and-inf ' \
