@@ -22,6 +22,7 @@ def get_sample_entries(search_dir, sample_confs, tomo_folder='tomo'):
 def run_tofu(sample_entries, \
              proj_folder='proj360', \
              num_axes=40, \
+             axis_step=1, \
              tomo=True, \
              slices_per_device=None, \
              overall_angle=None, \
@@ -71,7 +72,10 @@ def run_tofu(sample_entries, \
 
         rot_axes = None
         if num_axes:
-            rot_axes = range(wc-num_axes, wc+num_axes+1)
+            rot_axes = np.arange(float(wc-num_axes*axis_step), \
+                                 float(wc+num_axes*axis_step+axis_step), \
+                                 float(axis_step))
+            #rot_axes = range(wc-num_axes, wc+num_axes+1)
 
         if y_pos is None:
             y_pos = hc
@@ -167,6 +171,7 @@ def run_tofu(sample_entries, \
 def start_reconstruction(search_dir, \
                          sample_confs, \
                          num_axes, \
+                         axis_step, \
                          tomo=True, \
                          slices_per_device=None, \
                          overall_angle=None, \
@@ -187,6 +192,7 @@ def start_reconstruction(search_dir, \
     run_tofu(sample_entries, \
              proj_folder=proj_folder, \
              num_axes=num_axes, \
+             axis_step=axis_step, \
              tomo=tomo, \
              slices_per_device=slices_per_device, \
              overall_angle=overall_angle, \
@@ -240,6 +246,10 @@ def main():
                         help="The number of axes to calculate", \
                         type=int, \
                         default=40)
+    parser.add_argument("--axis_step", \
+                        help="The step of axes positions", \
+                        type=float, \
+                        default=1.0)
     parser.add_argument("--slices-per-device", \
                         help="The number of slices per device", \
                         type=int, \
@@ -294,6 +304,7 @@ def main():
     start_reconstruction(args.search_dir, \
                          args.sample_configs, \
                          args.num_axes, \
+                         args.axis_step, \
                          tomo=args.tomo, \
                          slices_per_device=args.slices_per_device, \
                          overall_angle=args.overall_angle, \
